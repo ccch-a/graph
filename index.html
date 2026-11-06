@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#173f35">
+  <meta name="description" content="Эпюр — учебный веб-сервис для построения видов, разрезов, сечений, аксонометрии и развёрток по варианту задания.">
+  <title>Эпюр — чертёж вашего варианта</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Russo+One&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="geometry.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <svg class="svg-defs" aria-hidden="true">
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3m0 0L7 8m5-5 5 5M4 14v6h16v-6"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v13m0 0 5-5m-5 5-5-5M4 20h16"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/></symbol>
+    <symbol id="i-fit" viewBox="0 0 24 24"><path d="M9 4H4v5m11-5h5v5M4 15v5h5m11-5v5h-5"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+    <symbol id="i-reset" viewBox="0 0 24 24"><path d="M4 4v6h6M5.5 15a7 7 0 1 0 .5-7l-2 2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6V3Zm8 0v5h5M9 12h6m-6 4h6"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h10m4 0h2M4 17h2m4 0h10M14 4v6M6 14v6"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+  </svg>
+
+  <header class="app-header">
+    <a class="brand" href="./" aria-label="Эпюр, на главную">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span><b>ЭПЮР</b><small>инженерная графика</small></span>
+    </a>
+    <div class="save-state" id="saveState"><span></span>Сохранено на устройстве</div>
+    <div class="header-actions">
+      <button class="button button-ghost mobile-settings" id="mobileSettings" type="button" aria-label="Открыть параметры"><svg><use href="#i-settings"/></svg></button>
+      <button class="button button-outline" id="importButton" type="button"><svg><use href="#i-upload"/></svg><span>Импорт варианта</span></button>
+      <div class="export-wrap">
+        <button class="button button-primary" id="exportButton" type="button" aria-expanded="false"><svg><use href="#i-download"/></svg><span>Экспорт</span><svg class="chevron"><use href="#i-chevron"/></svg></button>
+        <div class="export-menu" id="exportMenu" hidden>
+          <div class="menu-label">Скачать текущий лист</div>
+          <button type="button" data-export="pdf"><span><b>PDF / печать</b><small>А3, с заданным масштабом</small></span><kbd>PDF</kbd></button>
+          <button type="button" data-export="svg"><span><b>Векторный SVG</b><small>Для редактирования и печати</small></span><kbd>SVG</kbd></button>
+          <button type="button" data-export="png"><span><b>Изображение PNG</b><small>Высокое разрешение</small></span><kbd>PNG</kbd></button>
+          <div class="menu-separator"></div>
+          <button type="button" data-export="json"><span><b>Файл варианта</b><small>Сохранить исходные данные</small></span><kbd>JSON</kbd></button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="app-layout">
+    <aside class="controls" id="controls" aria-label="Параметры варианта">
+      <div class="controls-heading">
+        <div><span class="eyebrow">Рабочий проект</span><h2>Исходные данные</h2></div>
+        <button class="icon-button" id="resetButton" type="button" title="Вернуть демонстрационный вариант"><svg><use href="#i-reset"/></svg></button>
+      </div>
+
+      <div class="project-fields">
+        <label class="field"><span>Номер варианта</span><input id="variant" type="text" maxlength="24" value="12"></label>
+        <label class="field"><span>Название детали</span><input id="partName" type="text" maxlength="60" value="Призма шестигранная"></label>
+      </div>
+
+      <section class="control-section">
+        <div class="section-title"><span>01</span><h3>Геометрическое тело</h3></div>
+        <div class="shape-grid" id="shapeGrid">
+          <button type="button" data-shape="box"><svg viewBox="0 0 48 40" aria-hidden="true"><path d="m8 13 19-8 13 7-19 9L8 13Zm0 0v16l13 7V21m19-9v16l-19 8M8 29l19-8 13 9"/></svg><span>Параллелепипед</span></button>
+          <button type="button" data-shape="prism"><svg viewBox="0 0 48 40" aria-hidden="true"><path d="m9 15 8-9 15 1 7 9-9 8-15-1-6-8Zm0 0v14l7 7 15-1 8-9V16M15 23v13m15-12v11M9 29l15 1 15-4"/></svg><span>Призма</span></button>
+          <button type="button" data-shape="pyramid"><svg viewBox="0 0 48 40" aria-hidden="true"><path d="m6 29 17-7 19 6-18 8L6 29Zm18-24L6 29m18-24 18 23M24 5v31"/></svg><span>Пирамида</span></button>
+          <button type="button" data-shape="cylinder"><svg viewBox="0 0 48 40" aria-hidden="true"><ellipse cx="24" cy="9" rx="15" ry="6"/><path d="M9 9v21c0 8 30 8 30 0V9M9 29c0 8 30 8 30 0"/></svg><span>Цилиндр</span></button>
+          <button type="button" data-shape="cone"><svg viewBox="0 0 48 40" aria-hidden="true"><path d="M24 4 8 29m16-25 16 25"/><ellipse cx="24" cy="29" rx="16" ry="7"/></svg><span>Конус</span></button>
+        </div>
+        <div class="mesh-note" id="meshNote" hidden><svg><use href="#i-file"/></svg><p>Импортированная модель. Изменяйте геометрию через JSON-файл варианта.</p></div>
+        <div class="parameter-grid" id="parameterGrid"></div>
+      </section>
+
+      <section class="control-section">
+        <div class="section-title"><span>02</span><h3>Секущая плоскость</h3></div>
+        <div class="segmented" id="sectionAxis" role="group" aria-label="Ось секущей плоскости">
+          <button type="button" data-axis="x">⊥ X</button><button type="button" data-axis="y">⊥ Y</button><button type="button" data-axis="z">⊥ Z</button>
+        </div>
+        <label class="range-field"><span>Смещение от начала координат</span><output id="sectionOutput">0 мм</output><input id="sectionOffset" type="range" min="-30" max="30" step="1" value="0"></label>
+        <p class="control-hint" id="sectionHint">Плоскость перпендикулярна оси Y. Передняя часть модели мысленно удаляется.</p>
+      </section>
+
+      <details class="control-section details-section">
+        <summary><span class="section-title"><span>03</span><h3>Оформление листа</h3></span><svg><use href="#i-chevron"/></svg></summary>
+        <div class="details-content">
+          <div class="parameter-grid two-columns">
+            <label class="field"><span>Формат</span><select id="paperFormat"><option value="A3">А3 · 420×297</option><option value="A4">А4 · 297×210</option></select></label>
+            <label class="field"><span>Масштаб</span><select id="drawingScale"><option value="auto">Автоматически</option><option value="1">1 : 1</option><option value="0.5">1 : 2</option><option value="0.2">1 : 5</option><option value="2">2 : 1</option></select></label>
+          </div>
+          <label class="field"><span>Студент</span><input id="student" type="text" placeholder="Фамилия И. О."></label>
+          <label class="field"><span>Группа</span><input id="studentGroup" type="text" placeholder="Номер группы"></label>
+        </div>
+      </details>
+
+      <div class="privacy-note"><span class="status-dot"></span><p><b>Без регистрации</b><br>Файлы и расчёты не покидают браузер.</p></div>
+    </aside>
+
+    <main class="workspace">
+      <div class="workspace-heading">
+        <div><div class="breadcrumb">Проекционное черчение <span>/</span> <span id="variantBreadcrumb">Вариант 12</span></div><h1 id="workspaceTitle">Три ортогональных вида</h1></div>
+        <span class="sheet-badge" id="sheetBadge">А3 <i></i> М 1:1</span>
+      </div>
+
+      <nav class="view-tabs" id="viewTabs" aria-label="Тип построения">
+        <button type="button" data-view="views"><span class="tab-number">01</span>Виды</button>
+        <button type="button" data-view="cut"><span class="tab-number">02</span>Разрез</button>
+        <button type="button" data-view="section"><span class="tab-number">03</span>Сечение</button>
+        <button type="button" data-view="axon"><span class="tab-number">04</span>Аксонометрия</button>
+        <button type="button" data-view="development"><span class="tab-number">05</span>Развёртка</button>
+      </nav>
+
+      <div class="drawing-toolbar">
+        <div class="layer-control">
+          <button class="toolbar-button" id="layersButton" type="button" aria-expanded="false"><svg><use href="#i-layers"/></svg>Слои<svg class="chevron"><use href="#i-chevron"/></svg></button>
+          <div class="layers-menu" id="layersMenu" hidden>
+            <label><input type="checkbox" data-layer="visible" checked><span></span>Видимый контур</label>
+            <label><input type="checkbox" data-layer="hidden" checked><span></span>Невидимый контур</label>
+            <label><input type="checkbox" data-layer="construction" checked><span></span>Линии связи</label>
+            <label><input type="checkbox" data-layer="axes" checked><span></span>Осевые линии</label>
+            <label><input type="checkbox" data-layer="dimensions" checked><span></span>Размеры</label>
+            <label><input type="checkbox" data-layer="labels" checked><span></span>Обозначения</label>
+          </div>
+        </div>
+        <div class="context-control" id="axonControl" hidden><span>Проекция</span><select id="axonType"><option value="iso">Изометрия</option><option value="dimetric">Диметрия</option></select></div>
+        <span class="drawing-hint" id="drawingHint">Главный вид · сверху · слева</span>
+        <div class="zoom-control"><button type="button" id="zoomOut" aria-label="Уменьшить"><svg><use href="#i-minus"/></svg></button><span id="zoomValue">100%</span><button type="button" id="zoomIn" aria-label="Увеличить"><svg><use href="#i-plus"/></svg></button><button type="button" id="zoomFit" aria-label="Вписать лист"><svg><use href="#i-fit"/></svg></button></div>
+      </div>
+
+      <section class="sheet-stage" id="sheetStage" aria-label="Лист чертежа">
+        <div class="sheet-paper" id="sheetPaper"></div>
+        <div class="empty-overlay" id="emptyOverlay" hidden></div>
+      </section>
+      <div class="sheet-status"><span><span class="status-dot"></span><span id="geometryStatus">Геометрия рассчитана</span></span><span id="sheetDimensions">420 × 297 мм</span><span>SVG · 64-bit</span></div>
+    </main>
+
+    <aside class="lesson" aria-label="Построение по шагам">
+      <div class="lesson-top"><span class="eyebrow">Учебный режим</span><div class="mode-switch" id="modeSwitch"><button type="button" data-mode="steps">По шагам</button><button type="button" data-mode="final">Готовый чертёж</button></div></div>
+      <div id="lessonContent">
+        <div class="step-progress"><span id="stepCounter">Шаг 1 из 6</span><span id="stepPercent">17%</span></div>
+        <div class="progress-track"><i id="progressBar"></i></div>
+        <article class="step-card" aria-live="polite">
+          <span class="step-kicker" id="stepKicker">Подготовка</span>
+          <h2 id="stepTitle">Анализируем форму</h2>
+          <p id="stepText"></p>
+          <div class="formula" id="stepFormula"></div>
+        </article>
+        <div class="step-navigation"><button class="button button-outline" id="previousStep" type="button">Назад</button><button class="play-button" id="playSteps" type="button" aria-label="Воспроизвести шаги"><svg><use href="#i-play"/></svg></button><button class="button button-dark" id="nextStep" type="button">Далее<svg><use href="#i-arrow"/></svg></button></div>
+        <ol class="step-list" id="stepList"></ol>
+      </div>
+      <div class="lesson-note"><svg><use href="#i-info"/></svg><p>Оранжевым выделена текущая операция. Пройдите шаги, чтобы объяснить построение на защите.</p></div>
+    </aside>
+  </div>
+
+  <dialog class="import-dialog" id="importDialog">
+    <form method="dialog" class="dialog-close-form"><button class="icon-button" aria-label="Закрыть"><svg><use href="#i-close"/></svg></button></form>
+    <span class="eyebrow">Новый чертёж</span><h2>Импорт варианта</h2><p class="dialog-lead">Загрузите параметрическое тело или собственную 3D-модель. Данные обрабатываются только в вашем браузере.</p>
+    <label class="drop-zone" id="dropZone"><input id="fileInput" type="file" accept=".json,.csv,application/json,text/csv"><svg><use href="#i-upload"/></svg><b>Выберите JSON или CSV</b><span>или перетащите файл сюда</span></label>
+    <div class="import-error" id="importError" role="alert" hidden></div>
+    <div class="import-example"><div><span class="eyebrow">Формат JSON</span><button type="button" id="downloadTemplate">Скачать шаблон</button></div><pre>{
+  "variant": "12",
+  "name": "Призма шестигранная",
+  "shape": "prism",
+  "params": { "radius": 40, "height": 60, "sides": 6 },
+  "section": { "axis": "y", "offset": 0 },
+  "student": "", "group": ""
+}</pre></div>
+    <details><summary>Как импортировать собственную модель?</summary><p>В JSON укажите <code>"shape":"mesh"</code>, массив <code>vertices</code> с координатами [x, y, z] и массив <code>faces</code> с индексами вершин. CSV принимает строки <code>имя,x,y,z</code> и создаёт каркас.</p></details>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" hidden><svg><use href="#i-check"/></svg><span></span></div>
+</body>
+</html>

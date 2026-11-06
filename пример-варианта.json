@@ -1,0 +1,21 @@
+{
+  "format": "epur-variant",
+  "version": 1,
+  "variant": "12",
+  "name": "Призма шестигранная",
+  "shape": "prism",
+  "params": {
+    "radius": 40,
+    "height": 60,
+    "sides": 6
+  },
+  "section": {
+    "axis": "y",
+    "offset": 0
+  },
+  "paper": "A3",
+  "scale": "auto",
+  "axonType": "iso",
+  "student": "",
+  "group": ""
+}
